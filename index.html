@@ -1,53 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Image with Link Button</title>
-<style>
-  body {
-    background-color: #222;
-    color: white;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    padding: 20px;
-  }
-  img {
-    max-width: 90vw;
-    max-height: 80vh;
-    object-fit: contain;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(255,255,255,0.3);
-  }
-  a.button {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 12px 28px;
-    background-color: #4285F4;
-    color: white;
-    font-weight: bold;
-    text-decoration: none;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(66,133,244,0.5);
-    transition: background-color 0.3s ease;
-  }
-  a.button:hover {
-    background-color: #2a64c7;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liam Gabriel Website - Login</title>
+  <style>
+    /* ===== Reset ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background-color: #000; /* Instagram dark mode */
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background: rgba(25, 25, 25, 0.95);
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 40px 30px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.05);
+    }
+
+    .title {
+      font-size: 1.5em;
+      margin-bottom: 25px;
+      font-weight: bold;
+      background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+      color: white;
+      transition: 0.3s;
+    }
+
+    .login-btn:hover {
+      opacity: 0.9;
+    }
+  </style>
 </head>
 <body>
+  <div class="login-container">
+    <div class="title">Liam Gabriel Website</div>
+    <button class="login-btn" onclick="login()">Click Here to Connect</button>
+  </div>
 
-<img src="./4fedd6149826916b5f9c46871e64a549.jpg" alt="Funny Meme" />
-
-<a class="button" href="https://drive.google.com/drive/folders/1zDRgnWFJZYpoG0Ap2_7uNj1n1VlxYi1y?usp=drive_link" target="_blank" rel="noopener noreferrer">
-  Click the link button below for pictures
-</a>
-
+  <script>
+    function login() {
+      window.location.href = "https://techtrickszone.com";
+    }
+  </script>
 </body>
 </html>
