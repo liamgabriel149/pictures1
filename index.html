@@ -1,74 +1,194 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liam Gabriel Website - Login</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Matrix Button — Click for Animation</title>
   <style>
-    /* ===== Reset ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', sans-serif;
+    :root{--bg:#050505;--accent:#00ff7f;--glass: rgba(255,255,255,0.04)}
+    html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,system-ui,Segoe UI,Arial;color:#ddd}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;gap:24px;flex-direction:column;padding:40px}
+
+    /* Button */
+    .matrix-btn{
+      --pad:18px 36px;
+      position:relative;display:inline-block;padding:var(--pad);border-radius:12px;border:none;cursor:pointer;
+      background:linear-gradient(135deg, rgba(0,0,0,0.45), rgba(255,255,255,0.02));
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 -2px 0 rgba(255,255,255,0.02);
+      color:var(--accent);font-weight:700;letter-spacing:1px;font-size:18px;backdrop-filter: blur(6px);
+      transition: transform .25s cubic-bezier(.2,.9,.3,1), box-shadow .25s;
+    }
+    .matrix-btn:active{transform:scale(.98)}
+    .matrix-btn.glow{box-shadow: 0 12px 40px rgba(0,255,127,0.12), 0 0 18px rgba(0,255,127,0.08); transform:scale(1.03)}
+
+    /* small UI note */
+    p.note{color:#9aa;color-scheme:dark;opacity:.9;margin:0;font-size:13px}
+
+    /* canvas fills viewport (hidden by pointer-events when off) */
+    #matrixCanvas{position:fixed;inset:0;z-index:40;pointer-events:none;display:block}
+    /* an optional overlay so button stands out while effect runs */
+    .dim{position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.5));z-index:35;pointer-events:none;opacity:0;transition:opacity .25s}
+    .dim.show{opacity:1}
+
+    /* status overlay that looks 'hacker-ish' */
+    .status {
+      position:fixed;
+      left:50%;
+      top:52%;
+      transform:translate(-50%,-50%);
+      z-index:60;
+      min-width:320px;
+      max-width:90%;
+      padding:18px 20px;
+      background:rgba(0,0,0,0.7);
+      border-radius:12px;
+      border:1px solid rgba(0,255,127,0.08);
+      color:var(--accent);
+      font-family:monospace;
+      text-align:center;
+      display:none;
+      box-shadow:0 10px 40px rgba(0,0,0,0.6);
+    }
+    .status.show{display:block}
+    .progress {
+      height:8px;
+      width:100%;
+      background:rgba(255,255,255,0.04);
+      border-radius:6px;
+      overflow:hidden;
+      margin-top:12px;
+    }
+    .progress > i {
+      display:block;
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, rgba(0,255,127,0.85), rgba(0,255,127,0.5));
+      border-radius:6px;
+      transition: width .25s linear;
     }
 
-    body {
-      background-color: #000; /* Instagram dark mode */
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .login-container {
-      background: rgba(25, 25, 25, 0.95);
-      border: 1px solid #222;
-      border-radius: 12px;
-      padding: 40px 30px;
-      width: 320px;
-      text-align: center;
-      box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.05);
-    }
-
-    .title {
-      font-size: 1.5em;
-      margin-bottom: 25px;
-      font-weight: bold;
-      background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .login-btn {
-      width: 100%;
-      padding: 14px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
-      color: white;
-      transition: 0.3s;
-    }
-
-    .login-btn:hover {
-      opacity: 0.9;
+    @media (max-width:420px){
+      .matrix-btn{font-size:16px;padding:14px 22px}
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
-    <div class="title">Liam Gabriel Website</div>
-    <button class="login-btn" onclick="login()">Click Here to Connect</button>
+  <div class="wrap">
+    <button class="matrix-btn" id="matrixBtn">Click Here to Connect</button>
+    <p class="note">Press the button to trigger the Matrix effect</p>
+  </div>
+
+  <canvas id="matrixCanvas"></canvas>
+  <div class="dim" id="dimOverlay"></div>
+
+  <div class="status" id="statusBox" aria-live="polite">
+    <div id="statusText">Initializing connection...</div>
+    <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
   </div>
 
   <script>
-    function login() {
-      window.location.href = "https://techtrickszone.com";
+    // ====== CONFIG ======
+    // Redirect target (dashboard). Make sure DarkWebMatrix.html is in same folder.
+    const REDIRECT_URL = './DarkWebMatrix.html';
+    // Durations (ms)
+    const MATRIX_DURATION = 3000; // matrix run time
+    const STATUS_DURATION = 1800; // status/progress total time
+    // =====================
+
+    const btn = document.getElementById('matrixBtn');
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('dimOverlay');
+    const statusBox = document.getElementById('statusBox');
+    const statusText = document.getElementById('statusText');
+    const progressBar = document.getElementById('progressBar');
+
+    let columns = 0, drops = [], intervalId = null;
+
+    function resizeCanvas(){
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      columns = Math.floor(canvas.width / 14);
+      drops = Array(columns).fill(1);
     }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawMatrix(){
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#00ff7f';
+      ctx.font = '14px monospace';
+      for(let i=0;i<drops.length;i++){
+        const charType = Math.random();
+        let text;
+        if(charType > 0.6) text = String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96));
+        else text = String.fromCharCode(33 + Math.floor(Math.random() * 94));
+        ctx.fillText(text, i * 14, drops[i] * 14);
+        if(drops[i] * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }
+
+    function runFakeProgress(duration, onFinish){
+      statusBox.classList.add('show');
+      progressBar.style.width = '0%';
+      let start = performance.now();
+      function step(now){
+        let t = Math.min(1, (now - start) / duration);
+        progressBar.style.width = Math.round(t * 100) + '%';
+        if (t < 1) requestAnimationFrame(step);
+        else {
+          if (onFinish) onFinish();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function startSequence(){
+      btn.classList.add('glow');
+      overlay.classList.add('show');
+      statusBox.classList.remove('show');
+      statusText.textContent = 'Establishing secure channel...';
+
+      clearInterval(intervalId);
+      intervalId = setInterval(drawMatrix, 50);
+
+      setTimeout(() => {
+        clearInterval(intervalId);
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        btn.classList.remove('glow');
+        overlay.classList.remove('show');
+
+        statusText.textContent = 'Bypassing firewall...';
+        runFakeProgress(STATUS_DURATION / 3, () => {
+          statusText.textContent = 'Extracting keys...';
+          runFakeProgress(STATUS_DURATION / 3, () => {
+            statusText.textContent = 'Connection established. Redirecting...';
+            runFakeProgress(STATUS_DURATION / 3, () => {
+              // Redirect to dashboard page
+              window.location.href = REDIRECT_URL;
+            });
+          });
+        });
+
+      }, MATRIX_DURATION);
+    }
+
+    let locked = false;
+    btn.addEventListener('click', () => {
+      if (locked) return;
+      locked = true;
+      startSequence();
+      setTimeout(()=>{ locked = false; }, MATRIX_DURATION + STATUS_DURATION + 100);
+    });
+
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        btn.click();
+      }
+    });
   </script>
 </body>
 </html>
